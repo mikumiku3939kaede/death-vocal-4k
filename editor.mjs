@@ -46,18 +46,22 @@ function describeControls(prefix) {
   $(`${prefix}-value-description`).textContent = value ? `${noteValueLabel(value)} = ${noteValueLength(value)}拍` : '任意の長さを保持しています';
   return value;
 }
-function updateInputValue() {
+function updateInputValue({ preview = false } = {}) {
   try {
     const value = describeControls('input'), duration = beatValue(noteValueLength(value));
     if (duration < 1/1024 || duration > 256) throw new Error('入力音価は1/1024〜256拍の範囲で指定してください。');
     inputValue = value;
     document.querySelectorAll('[data-value]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.value) === value.denominator)));
     draw();
-  } catch (error) { status(error.message, true); setValueControls('input', inputValue); describeControls('input'); }
+  } catch (error) { if (!preview) { status(error.message, true); setValueControls('input', inputValue); describeControls('input'); } }
 }
 for (const id of ['value','dots','tuplet','tuplet-count','tuplet-in']) {
   $(`input-${id}`).addEventListener('change', updateInputValue);
   $(`note-${id}`).addEventListener('change', () => { try { describeControls('note'); } catch (error) { status(error.message, true); } });
+}
+for (const id of ['tuplet-count','tuplet-in']) {
+  $(`input-${id}`).addEventListener('input', () => updateInputValue({ preview: true }));
+  $(`note-${id}`).addEventListener('input', () => { try { describeControls('note'); } catch {} });
 }
 document.querySelectorAll('[data-value]').forEach(button => button.addEventListener('click', () => { $('input-value').value = button.dataset.value; updateInputValue(); }));
 $('note-length').addEventListener('input', () => { $('note-value').value = 'custom'; describeControls('note'); });
