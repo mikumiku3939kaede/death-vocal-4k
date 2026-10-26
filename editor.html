@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja" class="editor-root">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080d19"><title>譜面エディタ — デス発声練習</title><link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./editor.css"></head>
+<body class="editor-page">
+  <main class="editor-shell">
+    <header class="editor-top"><div><a href="./">← タイトル</a><h1>譜面エディタ <span>管理用</span></h1></div><div class="editor-actions"><button id="import">JSONを読み込む</button><input id="import-file" type="file" accept=".json,application/json" hidden><button id="apply">ゲームで使う</button><button id="export" class="primary">JSONを書き出す</button></div></header>
+    <section class="editor-meta" aria-label="譜面の情報">
+      <label class="name-field">譜面名<input id="chart-title" maxlength="100"></label>
+      <label>BPM<input id="chart-bpm" type="number" min="40" max="240" step="1"></label>
+      <label>長さ（拍）<input id="chart-beats" type="number" min="1" max="256" step="1"></label>
+      <label>開始カウント<input id="chart-count" type="number" min="0" max="8" step="1"></label>
+    </section>
+    <section class="editor-toolbar" aria-label="配置の設定">
+      <div><button id="previous" aria-label="前の8拍">←</button><strong id="page-label"></strong><button id="next" aria-label="次の8拍">→</button></div>
+      <label>音域<select id="octave"><option value="48">C3〜C4</option><option value="60" selected>C4〜C5</option><option value="72">C5〜C6</option></select></label>
+      <div class="input-note-value">
+        <label>入力音価<select id="input-value" aria-label="入力音価"></select></label>
+        <label>付点<select id="input-dots"><option value="0">なし</option><option value="1">付点</option><option value="2">複付点</option></select></label>
+        <label class="tuplet-toggle"><input id="input-tuplet" type="checkbox">連符</label>
+        <span id="input-tuplet-fields" class="tuplet-fields" hidden><label><input id="input-tuplet-count" type="number" min="1" max="1024" value="3" aria-label="入力連符の個数">個を</label><label><input id="input-tuplet-in" type="number" min="1" max="1024" value="2" aria-label="入力連符が収まる音符の個数">個分に</label></span>
+      </div>
+      <label>操作<select id="tool"><option value="place">選択・配置</option><option value="erase">消しゴム</option><option value="pan">横スクロール</option></select></label>
+      <button id="undo">取り消す</button><button id="redo">やり直す</button>
+    </section>
+    <div class="note-value-strip"><div class="value-shortcuts" aria-label="よく使う音符"><button type="button" data-value="4">♩ 4分</button><button type="button" data-value="8">♪ 8分</button><button type="button" data-value="16">16分</button><button type="button" data-value="32">32分</button><button type="button" data-value="64">64分</button></div><output id="input-value-description" aria-live="polite"></output></div>
+    <div class="editor-view"><p id="editor-help" class="editor-help">空白をクリックして配置。ノーツをドラッグして移動、音程バーの右端を引いて長さ変更。4分音符＝1拍。選んだ音価が配置・移動の単位になります。</p><label class="zoom-label">横の拡大 <input id="zoom" type="range" min="80" max="520" step="10" value="110"><output id="zoom-value">110 px/拍</output></label></div>
+    <div class="editor-workspace">
+      <div class="editor-scroll"><canvas id="editor-canvas" tabindex="0" role="img" aria-label="音程と4Kの編集グリッド" aria-describedby="editor-help selection-description"></canvas></div>
+      <aside class="note-inspector" aria-label="選択ノーツの編集">
+        <div class="inspector-heading"><strong id="selected-kind">ノーツを選択</strong><span id="selected-pitch">—</span></div>
+        <p id="inspector-empty">上は歌う音程、下はD / F / J / K。同じ拍の位置に並びます。</p>
+        <form id="note-form" hidden>
+          <label>開始位置（拍）<input id="note-beat" required autocomplete="off" aria-describedby="fraction-help"></label>
+          <fieldset id="note-value-fields"><legend>選択ノーツの音価</legend>
+            <label>音符<select id="note-value"></select></label>
+            <label>付点<select id="note-dots"><option value="0">なし</option><option value="1">付点</option><option value="2">複付点</option></select></label>
+            <label class="tuplet-toggle"><input id="note-tuplet" type="checkbox">連符</label>
+            <div id="note-tuplet-fields" class="tuplet-fields" hidden><label><input id="note-tuplet-count" type="number" min="1" max="1024" value="3" aria-label="選択連符の個数">個を</label><label><input id="note-tuplet-in" type="number" min="1" max="1024" value="2" aria-label="選択連符が収まる音符の個数">個分に</label></div>
+            <output id="note-value-description"></output>
+          </fieldset>
+          <details id="note-custom-length"><summary>旧譜面・任意の長さを編集</summary><label id="note-length-field">長さ（4分音符を1とする拍）<input id="note-length" autocomplete="off"></label></details>
+          <label id="note-midi-field">音程<select id="note-midi"></select></label>
+          <label id="note-lane-field">レーン<select id="note-lane"><option value="0">D</option><option value="1">F</option><option value="2">J</option><option value="3">K</option></select></label>
+          <button id="update-note" type="submit" class="primary">変更を適用</button>
+          <button id="delete-note" type="button">選択ノーツを削除</button>
+        </form>
+        <p id="fraction-help">4分音符＝1拍、8分音符＝1/2拍、16分音符＝1/4拍。<br>連符は「選んだ音符を何個分の時間に収めるか」で指定します。4Kはタップで、音価は配置間隔に使います。</p>
+        <p class="keyboard-help">方向キー：選択ノーツを1目盛移動<br>Delete：削除 / Esc：選択解除<br>⌘ / Ctrl + Z：取り消す</p>
+      </aside>
+    </div>
+    <p id="selection-description" class="sr-only" aria-live="polite"></p>
+    <footer class="editor-footer"><span id="editor-counts"></span><div><button id="default">標準譜面を開く</button><button id="empty">空の譜面を作る</button></div></footer>
+    <p id="editor-status" role="status"></p>
+  </main>
+  <script type="module" src="./editor.mjs"></script>
+</body></html>

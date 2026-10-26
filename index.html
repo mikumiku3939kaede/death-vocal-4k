@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080d19">
+  <meta name="description" content="カラオケ式の音程バーと立体4K譜面。ドレミファソラシドを3周、歌いながら演奏。">
+  <title>デス発声練習</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-phase="idle" data-screen="title">
+  <section id="title-screen" class="title-screen" aria-labelledby="title-heading">
+    <div class="title-beams" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="title-content">
+      <span class="title-overline">VOICE × 4KEYS</span>
+      <h1 id="title-heading"><span>デス</span><span>発声練習</span></h1>
+      <div class="title-actions">
+        <button id="title-start" class="start-button" aria-keyshortcuts="Enter Space"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4 12 8-12 8Z"/></svg>練習を始める</button>
+        <button id="title-settings" class="title-settings">設定</button>
+      </div>
+    </div>
+  </section>
+  <main id="game" class="game" aria-label="デス発声練習 プレイ画面" tabindex="-1" hidden>
+    <div class="hud" aria-label="スコアと操作">
+      <div class="score"><span>SCORE</span><strong id="score">0000000</strong></div>
+      <div class="hud-center"><span id="round-label">1 / 3</span><span class="combo"><strong id="combo">0</strong> COMBO</span></div>
+      <div class="hud-controls">
+        <button id="home" class="icon-button" aria-label="タイトルに戻る" title="タイトルに戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5-7 7 7 7M7 12h13"/></svg></button>
+        <button id="stop" class="icon-button" aria-label="プレイを終了" title="終了" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1"/></svg></button>
+        <button id="settings-button" class="icon-button" aria-label="設定" title="設定"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.4 3-.5 2-1.4.8-2-.6-2 3.6 1.4 1.5v1.6L3.5 13l2 3.6 2-.5 1.4.8.5 2h4.2l.5-2 1.4-.8 2 .5 2-3.6-1.4-1.1v-1.6L19.5 8l-2-3.6-2 .6-1.4-.8-.5-2Z"/><circle cx="11.5" cy="11" r="3"/></svg></button>
+      </div>
+    </div>
+    <section class="pitch-chart" aria-label="上部のカラオケ音程譜面">
+      <canvas id="pitch-canvas" role="img" aria-label="右から左へ流れる音程バー。枠線がお手本です。音程が合うとバー全体が金色になり、白と赤の線があなたの声を示します。縦線が現在の位置です。"></canvas>
+      <span id="pitch-feedback" class="pitch-feedback"></span><span id="voice-matched" class="sr-only" aria-live="polite">音程一致 0 / 24音</span>
+      <span class="voice-readout" aria-label="声のヒット率" id="voice-score">—</span>
+      <span class="sr-only" id="mic-status">MIC STANDBY</span>
+    </section>
+    <section class="key-stage" aria-label="下部の立体4K譜面">
+      <canvas id="rhythm-canvas" role="img" aria-label="奥から手前へ迫る4レーンのノーツ。手前の光る判定ラインでD、F、J、Kキーまたはパッドを押します。"></canvas>
+      <div class="judgement" id="judgement" aria-hidden="true"><strong></strong></div>
+      <div id="countdown" class="countdown" hidden></div>
+      <button id="start" class="start-button" aria-keyshortcuts="Space"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4 12 8-12 8Z"/></svg><span id="start-label">スタート</span></button>
+      <div class="key-pads" aria-label="4K操作パッド">
+        <button data-lane="0" aria-label="D レーン1" aria-keyshortcuts="D"><kbd>D</kbd></button>
+        <button data-lane="1" aria-label="F レーン2" aria-keyshortcuts="F"><kbd>F</kbd></button>
+        <button data-lane="2" aria-label="J レーン3" aria-keyshortcuts="J"><kbd>J</kbd></button>
+        <button data-lane="3" aria-label="K レーン4" aria-keyshortcuts="K"><kbd>K</kbd></button>
+      </div>
+    </section>
+    <div id="notice" class="toast" role="status"></div>
+  </main>
+  <dialog id="settings" aria-labelledby="settings-title">
+    <button id="close-settings" class="dialog-close" aria-label="設定を閉じる">×</button>
+    <h2 id="settings-title">設定</h2>
+    <label class="setting-row" for="tempo">テンポ<select id="tempo"><option value="90">90 BPM</option><option value="120" selected>120 BPM</option><option value="150">150 BPM</option></select></label>
+    <div class="speed-setting">
+      <div><label for="scroll-speed">譜面スピード</label><output id="scroll-speed-value" for="scroll-speed">1.00×</output></div>
+      <input id="scroll-speed" type="range" min="0.5" max="3" step="0.25" value="1" aria-describedby="scroll-speed-help">
+      <p id="scroll-speed-help">4Kノーツの流れる速さ</p>
+    </div>
+    <div class="speed-setting">
+      <div><label for="input-delay">マイク遅延補正</label><output id="input-delay-value" for="input-delay">80 ms</output></div>
+      <input id="input-delay" type="range" min="0" max="300" step="10" value="80">
+      <p>声の判定を音程バーに合わせます</p>
+    </div>
+    <label class="setting-row" for="mic">マイク採点<input id="mic" type="checkbox" checked></label>
+    <button id="sound" class="setting-row sound-switch" aria-pressed="true" aria-label="ガイド音をミュート"><span>ガイド音 ON</span><span aria-hidden="true">♪</span></button>
+    <section class="chart-settings" aria-label="譜面の管理">
+      <span>譜面</span><strong id="chart-name">標準譜面</strong>
+      <div><label class="file-button" for="chart-file">JSONを読み込む</label><input id="chart-file" type="file" accept=".json,application/json" class="sr-only"><button id="clear-chart" hidden>標準に戻す</button></div>
+      <p id="chart-status" role="status"></p><a href="./editor.html">管理用：譜面エディタ →</a>
+    </section>
+  </dialog>
+  <dialog id="results" aria-labelledby="result-title">
+    <button id="close-results" class="dialog-close" aria-label="結果を閉じる">×</button><span class="eyebrow" id="result-kicker">RESULT</span><h2 id="result-title">3周クリア</h2>
+    <div class="result-rank" id="result-rank">—</div><div class="result-main"><span>SCORE</span><strong id="result-score">0</strong></div>
+    <div class="result-details"><div><span>MAX COMBO</span><strong id="result-combo">0</strong></div><div><span>音程</span><strong id="result-voice">—</strong></div><div><span>PERFECT</span><strong id="result-perfect">0</strong></div></div>
+    <p id="result-note"></p><button id="retry" class="start-button">もう一度</button><button id="results-home" class="title-settings">タイトルに戻る</button>
+  </dialog>
+  <script type="module" src="./app.mjs"></script>
+</body>
+</html>
